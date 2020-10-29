@@ -2,7 +2,7 @@ const WORKER_URL = 'worker.jjmax.workers.dev';
 // const WORKER_URL = '127.0.0.1:8787';
 
 const COOKIE_INFO = 'Domain=.jjmax.workers.dev; Secure; HttpOnly; SameSite=none; Expires=2147483647';
-const CLIENT_SITE = "https://jjmax75.github.io";
+const CLIENT_SITE = 'https://jjmax75.github.io';
 // const CLIENT_SITE = 'http://localhost:5000';
 
 function checkCookies(request, names) {
@@ -20,12 +20,12 @@ function checkCookies(request, names) {
 };
 
 function getCookie(request, name) {
-  let result = "";
-  const cookieString = request.headers.get("Cookie");
+  let result = '';
+  const cookieString = request.headers.get('Cookie');
   if (cookieString) {
-    const cookies = cookieString.split(";");
+    const cookies = cookieString.split(';');
     cookies.forEach(cookie => {
-      const cookiePair = cookie.split("=", 2);
+      const cookiePair = cookie.split('=', 2);
       const cookieName = cookiePair[0].trim();
       if (cookieName === name) {
         const cookieVal = cookiePair[1];
@@ -39,10 +39,14 @@ function getCookie(request, name) {
 function fetchVars() {
   return `
     console.log('fetching the vars');
-    fetch("https://${WORKER_URL}/", {
+    fetch('https://${WORKER_URL}/', {
       method: 'POST',
       body: JSON.stringify([name, quote]),
-      credentials: 'include',
+      credentials: 'include'
+    }).then(response => {
+      return response.text();
+    }).then(ip => {
+      console.log(ip);
     });
   `
 };
@@ -55,37 +59,38 @@ async function handleRequest(request) {
     const quote = getCookie(request, 'quote');
 
     return new Response(`
-      console.log("name: ${name}");
-      console.log("quote: ${quote}");
-      document.cookie = "local_name=${name}";
-      document.cookie = "local_quote=${quote}";
+      console.log('name: ${name}');
+      console.log('quote: ${quote}');
+      document.cookie = 'local_name=${name}';
+      document.cookie = 'local_quote=${quote}';
     `, {
-      headers: { "Content-Type": "text/html" },
+      headers: { 'Content-Type': 'application/javascript' },
     });
   } else {
     return new Response(fetchVars(), {
       headers: {
-        "Content-Type": "text/html",
+        'Content-Type': 'application/javascript',
       },
     });
   }
 };
 
 async function handlePostRequest(request) {
-  const ip = request.headers.get("CF-Connecting-IP");
+  const ip = request.headers.get('CF-Connecting-IP');
 
   const [name, quote] = await request.json();
 
-  const response = new Response(`console.log("${ip}")`, {
+  const response = new Response(ip, {
     headers: {
-      "Content-Type": "text/html",
+      'Content-Type': 'text/plain',
     },
   });
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type");
-  response.headers.set("Access-Control-Allow-Credentials", "true");
-  response.headers.set("Access-Control-Allow-Origin", CLIENT_SITE);
-  response.headers.append("Set-Cookie", `name=${name}; ${COOKIE_INFO}`);
-  response.headers.append("Set-Cookie", `quote=${quote}; ${COOKIE_INFO}`);
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Origin', CLIENT_SITE);
+  response.headers.append('Set-Cookie', `name=${name}; ${COOKIE_INFO}`);
+  response.headers.append('Set-Cookie', `quote=${quote}; ${COOKIE_INFO}`);
+  response.bodyUsed = true;
 
   return response;
 }
@@ -93,7 +98,7 @@ async function handlePostRequest(request) {
 addEventListener('fetch', event => {
   const request = event.request;
 
-  if (request.method.toUpperCase() === "POST") {
+  if (request.method.toUpperCase() === 'POST') {
     event.respondWith(handlePostRequest(request));
   } else {
     event.respondWith(handleRequest(request));
